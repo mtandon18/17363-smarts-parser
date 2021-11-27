@@ -63,7 +63,7 @@ def atomUnit():
     # Because of PEG, we match with a branch first and only if this doesn't work
     # do we attempt to match with a ring and then just an atom
     return [(SuppressStr('('), ZeroOrMore(atomUnit), SuppressStr(')')),
-            (Optional(bond), ZeroOrMore(atomWithOptCharge), Optional(ringClosure))]
+            (Optional(bond), ZeroOrMore(atomWithOptCharge), Optional(ringConnectivity))]
 
 def fragment():
     return atom, ZeroOrMore(atomUnit), EOF
