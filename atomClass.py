@@ -33,6 +33,54 @@ class Context():
         else:
             self.degree = degree     
 
+    def set_explicit_h_count(self, explicit_h_count):
+        if self.explicit_h_count:
+            raise "Explicit H count for this atomic unit has already been set"
+        else:
+            self.explicit_h_count = explicit_h_count
+
+    def set_implicit_h_count(self, implicit_h_count):
+        if self.implicit_h_count:
+            raise "Implicit H count for this atomic unit has already been set"
+        else:
+            self.implicit_h_count = implicit_h_count
+    
+    def set_ring_membership(self, ring_membership):
+        if self.ring_membership:
+            raise "Ring membership for this atomic unit has already been set"
+        else:
+            self.ring_membership = ring_membership
+
+    def set_ring_size(self, ring_size):
+        if self.ring_size:
+            raise "Ring size for this atomic unit has already been set"
+        else:
+            self.ring_size = ring_size
+
+    def set_valence(self, valence):
+        if self.valence:
+            raise "Valence for this atomic unit has already been set"
+        else:
+            self.valence = valence
+
+    def set_connectivity(self, connectivity):
+        if self.connectivity:
+            raise "Connectivity for this atomic unit has already been set"
+        else:
+            self.connectivity = connectivity
+
+    def set_ring_connectivity(self, ring_connectivity):
+        if self.ring_connectivity:
+            raise "Ring connectivity for this atomic unit has already been set"
+        else:
+            self.ring_connectivity = ring_connectivity
+
+    def set_charge(self, charge):
+        if self.charge:
+            raise "Charge for this atomic unit has already been set"
+        else:
+            self.charge = charge
+            
 class Bond():
     def __init__(self, bond_type):
         self.bond_type = bond_type

@@ -16,11 +16,46 @@ def charge():
 def atomWithOptCharge():
     return [(SuppressStr('['), atomUnit, Optional(charge), SuppressStr(']')), (atom)]
 
-def ringClosure():
-    return _(r'\d*')
-
 def bond():
-    return ['=','#','-','/','\\']
+    return ['-', '/', '\\', '/?', '\?', '=', '#', ':', '~', '@']
+
+def wildCard():
+    return '*'
+
+def aromatic():
+    return 'A'
+
+def degree():
+    return (_(r'D\d*'))
+
+def totalHCount():
+    return (_(r'H\d*'))
+
+def implicitHCount():
+    return (_(r'h\d*'))
+
+def valence():
+    return (_(r'v\d*'))
+
+def connectivity():
+    return (_(r'X\d*'))
+
+def ringConnectivity():
+    return (_(r'x\d*'))
+
+def ringMembership():
+    return (_(r'R\d*'))
+
+def ringSize():
+    return (_(r'r\d*'))
+
+def atomicNumber():
+    return (_(r'#\d*'))
+
+def atomicPrimitive():
+    return [charge, wildCard, aromatic, degree, totalHCount, implicitHCount,
+    valence, connectivity, ringConnectivity, ringMembership, ringSize, 
+    atomicNumber]
 
 # Parser Functions
 def atomUnit():
