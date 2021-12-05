@@ -118,7 +118,6 @@ class TreeVisitor(PTNodeVisitor):
         return children
 
     def visit_bracketedAtom(self, node, children):
-        print("HI", children, node)
         return children
     
     def visit_wildcard(self, node, children):
@@ -166,9 +165,7 @@ def parseSMARTS(s):
 
 def print_list_units(result):
     for elem in result:
-        print(type(elem))
-        if type(elem) == list:
-            print("AHHH")
+        if type(elem) != AtomWithContext:
             print_list_units(elem)
         else:
             print(elem)
@@ -178,9 +175,7 @@ initParser()
 for line in f.splitlines():
     print(f"\n{line}")
     tree = parser.parse(line)
-    print(tree.tree_str())
+    print(tree.tree_str(), "\n")
     result = visit_parse_tree(tree, TreeVisitor())
-    print(result)
     print_list_units(result)
-    print("\n")
 
