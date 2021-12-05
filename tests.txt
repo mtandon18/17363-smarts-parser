@@ -79,7 +79,7 @@ O=C(/C=C/c1ccccc1Cl)OCC(=O)N1CCc2ccccc21
 CCOc1ccc(-c2nnc(SCC(=O)NCCc3ccccc3)nc2-c2ccc(OCC)cc2)cc1
 c1ccc(-c2nn3c(-c4ccco4)nnc3s2)nc1
 COc1ccc(CCn2c(N3CCN(Cc4ccccc4)CC3)nc3c2c(=O)[nH]c(=O)n3C)cc1
-Cl[Si](Cl)(c1ccccc1)c1ccccc1
+Cl[S](Cl)(c1ccccc1)c1ccccc1
 Cc1ccc2nc3sc(C(=O)Nc4ccc(F)cc4)cc3cc2c1
 COc1ccc(OCc2nn3c(-c4ccccn4)nnc3s2)cc1
 O=C1c2oc3ccc(Cl)cc3c(=O)c2C(c2cccc(Br)c2)N1CCO

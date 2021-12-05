@@ -2,71 +2,106 @@ from arpeggio import Optional, ZeroOrMore, EOF, StrMatch
 from arpeggio import RegExMatch as _
 from arpeggio import ParserPython
 from arpeggio import PTNodeVisitor, visit_parse_tree
+from atomClass import AtomWithContext, Atom, Bond, Context
 
 # From Arpeggio tutorial, prevents string from appearing in parse tree
 class SuppressStr(StrMatch):
     suppress = True
 
+def specific_aromatic_atom():
+    return (_(r'br|cl|[bcfhinops]'))
+
+def specific_aliphatic_atom():
+    return (_(r'Br|Cl|[BCFHINOPS]'))
+
 def atom():
-    return [(_(r'Br|Cl|[BCFHINOPS]')), (_(r'br|cl|[bcfhinops]'))]
+    return [specific_aliphatic_atom, 
+            specific_aromatic_atom, 
+            wildCard, 
+            aromatic, 
+            aliphatic]
 
 def charge():
     return [(_(r'\+\d*')), (_(r'-\d*'))]
 
-def atomWithOptCharge():
-    return [(SuppressStr('['), atomUnit, Optional(charge), SuppressStr(']')), (atom)]
-
 def bond():
-    return ['-', '/', '\\', '/?', '\?', '=', '#', ':', '~', '@']
+    return ['-', '=', '#', ':', '~']
 
 def wildCard():
     return '*'
 
 def aromatic():
+    return 'a'
+
+def aliphatic():
     return 'A'
 
 def degree():
-    return (_(r'D\d*'))
+    return (SuppressStr("D"), _(r'\d*'))
 
 def totalHCount():
-    return (_(r'H\d*'))
+    return _(r'H\d*')
 
 def implicitHCount():
-    return (_(r'h\d*'))
+    return (SuppressStr("h"), _(r'\d*'))
 
 def valence():
-    return (_(r'v\d*'))
+    return (SuppressStr("v"), _(r'\d*'))
 
 def connectivity():
-    return (_(r'X\d*'))
+    return (SuppressStr("X"), _(r'\d*'))
 
 def ringConnectivity():
-    return (_(r'x\d*'))
+    return (SuppressStr("x"), _(r'\d*'))
 
 def ringMembership():
-    return (_(r'R\d*'))
+    return (SuppressStr("R"), _(r'\d*'))
 
 def ringSize():
-    return (_(r'r\d*'))
+    return (SuppressStr("r"), _(r'\d*'))
 
-def atomicNumber():
-    return (_(r'#\d*'))
+def atomContext():
+    return [charge, degree, totalHCount, implicitHCount,
+    valence, connectivity, ringConnectivity, ringMembership, ringSize]
 
-def atomicPrimitive():
-    return [charge, wildCard, aromatic, degree, totalHCount, implicitHCount,
-    valence, connectivity, ringConnectivity, ringMembership, ringSize, 
-    atomicNumber]
+def ringClosure():
+    return (_(r'\d*'))
 
-# Parser Functions
-def atomUnit():
-    # Second option lists accepted atoms, our subset will only support these atoms
-    # Because of PEG, we match with a branch first and only if this doesn't work
-    # do we attempt to match with a ring and then just an atom
-    return [(SuppressStr('('), ZeroOrMore(atomUnit), SuppressStr(')')),
-            (Optional(bond), ZeroOrMore(atomWithOptCharge), Optional(ringConnectivity))]
+def logicalOperator():
+    return [_(r'&'), _(r','), _(r';')]
 
-def fragment():
-    return atom, ZeroOrMore(atomUnit), EOF
+def not_op():
+    return (_(r'!'))
+
+def atomWithContext():
+    return (Optional(not_op), atom, ZeroOrMore(atomContext))
+
+def bracketedAtom():
+    return [(SuppressStr("["), atomWithContext, ZeroOrMore(logicalOperator, [atomWithContext, ZeroOrMore(atomContext)]), SuppressStr("]")), atom]
+
+def smilesBranch():
+    return (SuppressStr('('), ZeroOrMore(smilesAtomUnit), SuppressStr(')'))
+
+def smartsBranch():
+    return (SuppressStr('('), ZeroOrMore(smartsAtomUnit), SuppressStr(')'))
+
+def smilesAtomUnit():
+    return [smilesBranch,
+            (Optional(bond), 
+            ZeroOrMore(bracketedAtom), 
+            Optional(ringClosure))]
+
+def smartsAtomUnit():
+    return [smartsBranch,
+            Optional(bond), 
+            bracketedAtom, 
+            Optional(ringClosure)]
+
+def smarts():
+    return ZeroOrMore(smartsAtomUnit), EOF
+
+def smiles():
+    return atom, ZeroOrMore(smilesAtomUnit), EOF
 
 # Visitor class that walks parse tree
 # Returns list of fragments,
@@ -75,80 +110,77 @@ def fragment():
 # Second list is ring
 # Any atomList in parenthesis is its own list
 # Any atomUnit is tuple of Atom string and int tag
-class AtomCloneVistor(PTNodeVisitor):
-    def visit_fragmentList(self, node, children):
+class TreeVisitor(PTNodeVisitor):
+    def visit_smarts(self, node, children):
         return list(children)
 
-    def visit_fragment(self, node, children):
-        d = dict()
-        for i in range(len(node)):
-            if node[i].rule_name == "atomList":
-                d[node[i].rule_name] = children[i]
-            elif node[i].rule_name == "ring":
-                d[node[i].rule_name], bond = children[i]
-                d["ringBond"] = bond
+    def smartsAtomUnit(self, node, children):
+        return children
 
-        return d
+    def visit_bracketedAtom(self, node, children):
+        print("HI", children, node)
+        return children
+    
+    def visit_wildcard(self, node, children):
+        return Atom({"is_wildcard": True})
 
-    def visit_ring(self, node, children):
-        if len(children) == 0 or children[0] in ['=','#']:
-            return None
-        bond = 1
-        if len(children) == 2 and children[1] == '=':
-            bond = 2
-        elif len(children) == 2 and children[1] == '#':
-            bond = 3
+    def visit_aromatic(self, node, children):
+        return Atom(**{"is_wildcard": True, "is_aromatic": True})
 
-        return (children[0], bond)
+    def visit_aliphatic(self, node, children):
+        return Atom(**{"is_wildcard": True, "is_aromatic": False})
 
-    def visit_atomList(self, node, children):
-        return list(children)
+    def visit_specific_aliphatic_atom(self, node, children):
+        return Atom(**{"is_wildcard": False, "is_aromatic": False, "atomic_symbol": node})
 
-    def visit_atomUnit(self, node, children):
-        # Parenthesized branch
-        if node[0].rule_name == "atomList":
-            return children[0]
+    def visit_connectivity(self, node, children):
+        return int(children[0])
 
-        noBondChildren = children
-        bond = 1
-        tag = None
-        if children[0] == '=':
-            bond = 2
-            noBondChildren = children[1:]
-        elif children[0] == '#':
-            bond = 3
-            noBondChildren = children[1:]
+    def visit_atom(self, node, children):
+        return children[0]
 
-        # Atom and tag
-        if len(noBondChildren) == 2:
-            d= dict()
-            d["atom"] = noBondChildren[0]
-            d["tag"] = int(noBondChildren[1])
-            d["bond"] = bond
-            return d
-        # Atom without tag
-        else:
-            d= dict()
-            d["atom"] = noBondChildren[0]
-            d["bond"] = bond
-            return d
-
+    def visit_atomWithContext(self, node, children):
+        atom = children[0]
+        context = Context()
+        for i in range(1, len(children)):
+            child = children[i]
+            rule = node[i]
+            if rule == "atomContext":
+                contextRule = child.rule
+                if contextRule == "connectivity":
+                    context.set_connectivity(child)
+        return AtomWithContext(atom, context)
 
 def initParser():
     """
     Set parser global variable to arpeggio parser for our format
     """
     global parser
-    parser = ParserPython(fragment)
+    #smilesParser = ParserPython(smiles)
+    parser = ParserPython(smarts)
 
 def parseSMARTS(s):
     initParser()
     tree = parser.parse(s)
     #listForm = visit_parse_tree(tree, AtomCloneVistor())
 
+def print_list_units(result):
+    for elem in result:
+        print(type(elem))
+        if type(elem) == list:
+            print("AHHH")
+            print_list_units(elem)
+        else:
+            print(elem)
 
-# f = open("pcbaClean.txt").read()  
-# initParser()
-# for line in f.splitlines():
-#     tree = parser.parse(line)
-#     print(tree)
+f = open("smartsTests.txt").read()  
+initParser()
+for line in f.splitlines():
+    print(f"\n{line}")
+    tree = parser.parse(line)
+    print(tree.tree_str())
+    result = visit_parse_tree(tree, TreeVisitor())
+    print(result)
+    print_list_units(result)
+    print("\n")
+
